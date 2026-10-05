@@ -1,0 +1,12 @@
+{% set done = steps | selectattr("state", "equalto", "done") | list | length %}
+<p class="ready-summary">{{ done }} of {{ steps | length }} steps complete{% if done == steps | length %}. The lab is fully exercised.{% endif %}</p>
+<ol class="ready">
+{% for s in steps %}
+  <li class="step {{ s.state }}"{% if s.state == "todo" %} aria-current="step"{% endif %}>
+    <span class="step-label">{{ s.label }}</span>
+    <span class="step-state">{{ {"done": "Done", "todo": "Next", "waiting": "Waiting"}[s.state] }}</span>
+    {% if s.detail %}<span class="step-detail">{{ s.detail }}</span>{% endif %}
+    {% if s.state == "todo" and s.hint %}<span class="step-hint">{{ s.hint }}</span>{% endif %}
+  </li>
+{% endfor %}
+</ol>

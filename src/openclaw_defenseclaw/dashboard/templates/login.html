@@ -3,7 +3,7 @@
 <main id="main" class="login" tabindex="-1">
   <form method="post" action="/login" class="card">
     <div class="brand"><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span> NetOps Guard</div>
-    <p class="muted">Security console for the DefenseClaw and OpenClaw lab. It only answers on this machine.</p>
+    <p class="muted">Security console for the DefenseClaw and OpenClaw lab. It only accepts connections from this machine.</p>
     <label for="token">Dashboard token</label>
     <input id="token" name="token" type="password" autocomplete="current-password" required autofocus
            aria-describedby="token-help{% if error %} token-error{% endif %}"{% if error %} aria-invalid="true"{% endif %}>

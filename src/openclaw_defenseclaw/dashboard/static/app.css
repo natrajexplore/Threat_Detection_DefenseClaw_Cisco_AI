@@ -37,7 +37,8 @@
 html { -webkit-text-size-adjust: 100%; }
 html { scroll-padding-top: 84px; }  /* sticky header must not cover the focused element */
 body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.5 var(--font); font-feature-settings: "tnum" 1; }
-h1, h2, h3 { margin: 0; line-height: 1.25; }
+h1, h2, h3 { margin: 0; line-height: 1.25; text-wrap: balance; }
+p { text-wrap: pretty; }
 h1 { font-size: 26px; font-weight: 750; letter-spacing: -0.01em; }
 h2 { font-size: 16px; font-weight: 700; }
 h3 { font-size: 14px; font-weight: 700; color: var(--steel); margin: 16px 0 6px; }
@@ -60,6 +61,8 @@ button:hover { background: var(--f-blue); border-color: var(--f-blue); color: va
 button.ghost, .btn { background: transparent; color: var(--ink); border: 1px solid var(--rule); font-weight: 600; }
 button.ghost:hover, .btn:hover { border-color: var(--ink); background: transparent; color: var(--ink); }
 button:disabled { opacity: .45; cursor: default; }
+button, .btn, .run, .lane-chip { transition: background-color .15s ease, border-color .15s ease, color .15s ease, transform .08s ease; }
+button:not(:disabled):active, .btn:active, .run:active, .lane-chip:active { transform: translateY(1px); }
 .btn { display: inline-flex; align-items: center; text-decoration: none; padding: 6px 11px; border-radius: var(--r-item); min-height: 34px; }
 .chk { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
 .chk input { min-height: 0; width: 16px; height: 16px; accent-color: var(--f-blue); }
@@ -268,3 +271,31 @@ main:focus { outline: none; }
 .htmx-request { cursor: progress; }
 form.htmx-request, button.htmx-request { opacity: .7; }
 .run[aria-current="true"] { border-color: var(--f-blue); box-shadow: inset 3px 0 0 var(--f-blue); background: var(--panel); }
+
+/* ---------- readiness, results tally, 404 ---------- */
+.ready-summary { font-weight: 650; margin-bottom: 12px; }
+.ready { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0;
+  counter-reset: step; border: 1px solid var(--rule); border-radius: var(--r-item); overflow: hidden; }
+.step { counter-increment: step; display: grid; gap: 3px; align-content: start; padding: 12px 14px 14px;
+  border-right: 1px solid var(--rule); background: var(--paper); position: relative; }
+.step:last-child { border-right: 0; }
+.step::before { content: counter(step); font-weight: 750; font-size: 13px; width: 24px; height: 24px; border-radius: 50%;
+  display: grid; place-items: center; border: 1.5px solid var(--steel); color: var(--steel); margin-bottom: 6px; }
+.step.done::before { content: "¹3"; background: var(--f-green); border-color: var(--f-green); color: var(--paper); }
+.step.todo { background: var(--panel); box-shadow: inset 0 3px 0 var(--f-blue); }
+.step.todo::before { border-color: var(--f-blue); color: var(--f-blue); }
+.step.waiting { color: var(--steel); }
+.step-label { font-weight: 700; line-height: 1.3; }
+.step-state { font-size: 13px; font-weight: 650; color: var(--steel); }
+.step.done .step-state { color: var(--f-green); }
+.step.todo .step-state { color: var(--f-blue); }
+.step-detail { font-size: 14px; color: var(--steel); }
+.step-hint { font-size: 14px; margin-top: 4px; }
+@media (max-width: 760px) { .step { border-right: 0; border-bottom: 1px solid var(--rule); } .step:last-child { border-bottom: 0; } }
+.tally { display: flex; flex-wrap: wrap; gap: 8px 32px; margin: 0 0 16px; }
+.tally div { display: flex; gap: 8px; align-items: baseline; }
+.tally dt { font-weight: 700; }
+.tally dd { margin: 0; color: var(--steel); }
+.notfound { min-height: 70vh; display: grid; place-items: center; padding: 24px 16px; }
+.notfound .card { max-width: 560px; display: grid; gap: 10px; }
+.case p, .expect p, .empty, .notfound p { max-width: 65ch; }

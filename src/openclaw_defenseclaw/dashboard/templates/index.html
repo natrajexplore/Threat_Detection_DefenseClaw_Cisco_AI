@@ -2,6 +2,11 @@
 {% block body %}
 {% set page = "overview" %}{% include "_topbar.html" %}
 <main id="main" class="grid" tabindex="-1">
+  <section class="card span-12" aria-labelledby="h-ready">
+    <div class="card-h"><h2 id="h-ready">Lab readiness</h2><span class="muted">Built from what the lab has actually recorded</span></div>
+    <div id="readiness" hx-get="/p/readiness" hx-trigger="load, every 10s"><p class="empty">Checking progress…</p></div>
+  </section>
+
   <section class="card posture span-12" aria-labelledby="h-health">
     <div class="card-h"><h2 id="h-health">Lab status</h2>
       <button class="ghost" hx-post="/a/canary" hx-target="#health" hx-swap="innerHTML" hx-disabled-elt="this">Reset canary files</button></div>
@@ -27,7 +32,7 @@
   </section>
 
   <section class="card span-5" aria-labelledby="h-lab">
-    <div class="card-h"><h2 id="h-lab">NetOps app decisions</h2><span class="muted">Lab controls inside the MCP apps</span></div>
+    <div class="card-h"><h2 id="h-lab">NetOps app decisions</h2><span class="muted">Checks built into the NetOps apps</span></div>
     <div id="lab" hx-get="/p/lab" hx-trigger="load, every 4s"><p class="empty">Loading app decisions…</p></div>
   </section>
 

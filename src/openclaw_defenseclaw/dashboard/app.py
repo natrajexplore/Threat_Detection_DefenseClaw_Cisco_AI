@@ -17,6 +17,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .. import lab, trace
 from ..security import a2a_ledger, events_ledger
@@ -144,6 +145,17 @@ def create_app(port: int = 8765) -> FastAPI:
         return tpl.TemplateResponse(request, "_health.html", {
             "health": lab.health(), "canary": lab.canary_status(),
             "enforce": os.environ.get("DCLAB_ENFORCE", "1") != "0"})
+
+    @app.get("/p/readiness", response_class=HTMLResponse)
+    def p_readiness(request: Request):
+        return tpl.TemplateResponse(request, "_readiness.html", {"steps": lab.readiness()})
+
+    @app.exception_handler(StarletteHTTPException)
+    async def not_found(request: Request, exc: StarletteHTTPException):
+        browser_page = not request.url.path.startswith(("/p/", "/a/", "/static/"))
+        if exc.status_code == 404 and browser_page:
+            return tpl.TemplateResponse(request, "404.html", {"path": request.url.path}, status_code=404)
+        return Response(str(exc.detail), status_code=exc.status_code)
 
     @app.get("/p/verdicts", response_class=HTMLResponse)
     def p_verdicts(request: Request):

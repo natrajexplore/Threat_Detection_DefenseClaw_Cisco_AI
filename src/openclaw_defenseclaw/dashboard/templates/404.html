@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block body %}
+{% set page = "" %}{% include "_topbar.html" %}
+<main id="main" class="notfound" tabindex="-1">
+  <div class="card">
+    <h1>Page not found</h1>
+    <p>There's nothing at <code>{{ path }}</code>. If you followed a link to a conversation run, the run may have merged into a newer one.</p>
+    <p><a href="/">Go to the overview</a> or <a href="/trace">open the conversation trace</a>.</p>
+  </div>
+</main>
+{% endblock %}

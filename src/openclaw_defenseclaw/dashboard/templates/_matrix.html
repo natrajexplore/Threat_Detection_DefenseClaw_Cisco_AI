@@ -1,3 +1,12 @@
+{% set ns = namespace(o={"Pass": 0, "Fail": 0, "Gap": 0}, a={"Pass": 0, "Fail": 0, "Gap": 0}, orun=0, arun=0) %}
+{% for c in cases %}{% set r = results.get(c.id, {}) %}
+  {% if r.get("observe") %}{% set ns.orun = ns.orun + 1 %}{% set _ = ns.o.update({r.observe.result: ns.o.get(r.observe.result, 0) + 1}) %}{% endif %}
+  {% if r.get("action") %}{% set ns.arun = ns.arun + 1 %}{% set _ = ns.a.update({r.action.result: ns.a.get(r.action.result, 0) + 1}) %}{% endif %}
+{% endfor %}
+<dl class="tally">
+  <div><dt>Observe mode</dt><dd>{{ ns.o.Pass }} pass, {{ ns.o.Fail }} fail, {{ ns.o.Gap }} gap, {{ cases | length - ns.orun }} not run</dd></div>
+  <div><dt>Action mode</dt><dd>{{ ns.a.Pass }} pass, {{ ns.a.Fail }} fail, {{ ns.a.Gap }} gap, {{ cases | length - ns.arun }} not run</dd></div>
+</dl>
 <div class="panel-groups">
 {% for category, items in cases | groupby("category") %}
   <section class="panel-group" aria-label="{{ category }}">

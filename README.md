@@ -1,42 +1,110 @@
-# Threat Detection with Cisco DefenseClaw: a secured multi-agent NetOps Assistant
+# Governing AI agents that act: a Cisco DefenseClaw security lab
 
-A hands-on security lab that deploys a **multi-agent [OpenClaw](https://docs.openclaw.ai) NetOps Assistant**, governs it with **[Cisco DefenseClaw](https://github.com/cisco-ai-defense/defenseclaw)**, attacks it with inert, controlled scenarios, and records what was **seen** (observe mode) and what was **blocked** (action mode), with evidence for each test.
+**A working network-operations AI assistant made of three cooperating agents, governed end to end by [Cisco DefenseClaw](https://github.com/cisco-ai-defense/defenseclaw), and built to be attacked so we can measure what the controls actually stop.**
 
-> **Running the team demo?** Start at **[`docs/DEMO_RUNBOOK.md`](docs/DEMO_RUNBOOK.md)**: an empty Ubuntu VM to a 25-minute demo.
+> **Running the live demo?** Start at [`docs/DEMO_RUNBOOK.md`](docs/DEMO_RUNBOOK.md). **Engineers:** jump to [Technical overview](#technical-overview).
 
 ---
 
-## Why this project
-
-OpenClaw moves AI from *chat* to *act*: one model wired to a shell, files, skills, MCP servers and other agents. That creates a real attack surface:
-- malicious third-party skills
-- poisoned MCP tool descriptions
-- prompt injection hidden in data
-- agents talking other agents into things
-- secrets leaking out through tool calls
-
-DefenseClaw is Cisco's open-source governance layer for these runtimes:
-- scans skills and MCP servers before they're trusted
-- inspects every LLM call and tool call at runtime
-- enforces policy, with optional human approval
-- keeps an audit trail
-
-This lab shows the whole loop on a realistic use case: **deploy → harden → attack → enforce → evidence**.
-
-## What's inside
+## Executive summary
 
 | | |
 |---|---|
-| 🤖 **Multi-agent NetOps Assistant** | An *orchestrator* delegates to a read-only *config-analyst* and a draft-only *change-reviewer* over **HMAC-signed, allowlisted, replay-protected handoffs**. Hub-and-spoke only: the specialists can't talk to each other. |
-| 🔌 **Agent-to-app via MCP** | Role-bound `netops-*` MCP servers parse ACLs, lint configs, diff configs and draft change proposals. Every tool carries MCP annotations, strict schemas, a path jail, redaction and rate limits. **Nothing ever touches a device.** |
-| 🛡️ **Defense in depth** | DefenseClaw is the policy decision point for every LLM and tool call. The lab's own controls still hold if a verdict is missed, and `DCLAB_ENFORCE=0` turns them log-only to show DefenseClaw on its own. |
-| 🧪 **24 inert test cases** | Malicious and obfuscated skills, MCP tool poisoning, path traversal, exfil via a third-party "app", direct and indirect injection, **forged / escalated / relayed agent handoffs**, `rm -rf`, `curl \| bash`, C2 beacons, cognitive tampering, HITL, fail-closed, latency |
-| 📊 **Dashboard** | Loopback-only, token-gated, strict CSP. Shows posture, a live DefenseClaw verdict feed, agent-to-agent handoffs, lab-control decisions, the observe-vs-action test matrix and a demo runner. |
-| 🧵 **Conversation trace** | One end-to-end timeline per run (operator → orchestrator → specialists → apps) with the DefenseClaw and lab verdict on every tool call. **Step-by-step replay** for presenting, and an **offline HTML report export** for the team. |
-| 🔭 **Lab Observer MCP** | A read-only MCP server so **Claude Code** can query the lab (status, results, evidence, runs, verdicts) over SSH stdio, with no new network port |
-| 🧾 **Tamper-evident evidence** | SHA-256 hash-chained ledgers, and per-test `evidence/<date>-<TC>/` folders with redacted audit exports and canary state |
+| **The risk** | AI agents no longer just answer questions. They run commands, read configurations, call business apps and delegate work to other agents. One poisoned file, malicious plugin or persuasive message can turn a helpful agent into one that leaks credentials or changes production network devices. |
+| **What we built** | A realistic NetOps assistant (an orchestrator, a read-only analyst and a draft-only change reviewer) running under DefenseClaw. Every model call and every action is inspected; risky actions need a human; everything is recorded as tamper-evident evidence. |
+| **What it proves** | For each of 24 controlled attacks, whether the risk is **seen** (monitoring mode) and **stopped** (enforcement mode), with saved evidence per test. Gaps are recorded as findings, not hidden. |
+| **Where it stands** | The platform is built and verified (44 automated checks) and the agents are running in an isolated lab VM. **Next:** connect DefenseClaw to the agents and run the 24-attack test plan. |
+| **What it informs** | Whether DefenseClaw is ready to be the control plane for agent pilots, which default settings must change before rollout, and where custom policy is still needed. |
 
-## Architecture
+## Why this matters
+
+Agentic AI creates risks that traditional application security doesn't cover, because the "user" issuing commands is a model that can be manipulated.
+
+| Business risk | How it happens | Control in this lab | Tested by |
+|---|---|---|---|
+| **Credential and data leakage** | An agent is tricked into printing or sending secrets | Secret detection on every tool call and response; output redaction | TC-SEC, TC-MCP-03 |
+| **Unauthorized production change** | An agent pushes `configure terminal`, `write memory` or `reload` to a device | Change agent can only draft; risky commands refused; human approval | TC-NET-01, TC-HITL |
+| **Supply-chain compromise** | A third-party skill or tool server contains hidden malicious instructions | Admission scanning before anything is trusted | TC-SKILL, TC-MCP-01 |
+| **Manipulation through data** | Instructions hidden inside a config file or web page | Content inspection; untrusted data clearly fenced off | TC-PI-01, TC-A2A-03 |
+| **Agents misusing each other** | A compromised agent impersonates or escalates through another | Signed, allowlisted, replay-proof handoffs between agents | TC-A2A-01..02 |
+| **Governance blind spots** | No record of what an agent did, or records that can be altered | Audit log plus hash-chained, tamper-evident lab ledgers | Every test |
+| **Control outage** | The guardrail goes down and traffic flows unchecked | Fail-closed configuration and health checks | TC-RES-01 |
+
+### Governance principles built in
+
+- **Least privilege by design:** each agent gets only the tools its job needs. The analyst can't change anything; the reviewer can't execute anything.
+- **Human in the loop:** medium-risk actions pause for a person to approve; unanswered requests are denied. Critical findings always block.
+- **Defense in depth:** DefenseClaw is the policy decision point; the lab's own controls still hold if a decision is missed.
+- **Evidence, not assertions:** every result links to a saved audit record; records are tamper-evident.
+- **Contained blast radius:** isolated VM, no inbound network access, agent account without administrator rights, fake secrets only.
+
+## What the 25-minute demo shows
+
+| Minutes | Act | What leadership sees |
+|---|---|---|
+| 3 | It works | Three agents cooperate on a firewall review; every handoff is signed and visible |
+| 6 | Monitoring mode | Attacks are detected and logged, but allowed: the "before" picture |
+| 6 | Enforcement mode | The same attacks are blocked or sent for human approval; protected files survive |
+| 5 | Agents and apps | Forged agent messages, privilege escalation and tool poisoning are rejected |
+| 2 | Fail-closed | With the guardrail down, risky actions don't run |
+| 3 | Evidence | A replayable timeline of every agent action and decision, exported as a shareable report |
+
+## Proof points
+
+**Verified today**
+- 44 automated checks pass: security controls, agent permissions, tamper detection, dashboard security and accessibility.
+- The agents run in an isolated Ubuntu 26.04 VM with a governed model connection, reachable from the laptop only through an encrypted tunnel.
+- Seven real issues found while building the lab (below). Each would have silently weakened a control in a real rollout.
+
+**Still to run**
+- The 24-attack test plan in monitoring and enforcement modes. Results will be recorded per test as Pass, Fail or Gap, with evidence, and summarized here. No results are claimed until they are captured.
+
+## Lessons for agent rollouts
+
+Findings from standing this up (OpenClaw 2026.9.8, DefenseClaw 0.8.10, Ubuntu 26.04). **The common thread: default settings can leave a control quietly switched off while everything looks healthy.**
+
+| # | Finding | Why it matters | What we changed |
+|---|---|---|---|
+| 1 | With OpenAI models, OpenClaw routes agent work through a separate "Codex" runtime by default | Agent actions could bypass the hooks DefenseClaw relies on | Pinned OpenClaw's own runtime and used an API key, not a personal login |
+| 2 | "Fail closed" alone doesn't fail closed: if DefenseClaw's gateway is down, traffic is allowed unless an extra setting is on | An outage silently becomes an open door | Set `DEFENSECLAW_STRICT_AVAILABILITY=1`; tested explicitly (TC-RES-01) |
+| 3 | Installed unattended, DefenseClaw silently picks the wrong agent connector | Looks installed, intercepts nothing | Installer always run with an explicit connector |
+| 4 | DefenseClaw's protocol guard covers editor-to-agent traffic only, not agent-to-agent | No dedicated guard between agents | Handoffs routed through inspected tool calls, plus signed envelopes |
+| 5 | Ubuntu's default file permissions stopped OpenClaw's service from installing | Gateway never starts | Tightened permissions for the agent account |
+| 6 | Browser sign-in for the model redirected to the wrong machine, and one-time codes got pasted around | Credentials handled outside controlled channels | Switched to an API key with a spending limit; personal login removed |
+| 7 | Secret masking corrupted structured tool output | Agents received broken data | Fixed and covered by a regression test |
+
+## Roadmap
+
+| Phase | Status |
+|---|---|
+| Platform: agents, tool servers, controls, dashboard, conversation trace, Claude Code observer, tests | ✅ Built (44 checks passing) |
+| 0. Isolated VM, non-root agent account, firewall | ✅ Done |
+| 1. Agent runtime and governed model connection | ✅ Running. 🟡 The three NetOps agents are next. |
+| 2. DefenseClaw monitoring mode | 🟡 Installed; connect and verify interception |
+| 3. Attack tests in monitoring mode | ☐ |
+| 4. Enforcement mode with human approval | ☐ |
+| 5. Export to Splunk / OpenTelemetry | ☐ |
+| 6. Custom NetOps policy for any gaps found | ☐ |
+| 7. Findings report | ☐ |
+
+---
+
+## Technical overview
+
+### What's inside
+
+| | |
+|---|---|
+| **Multi-agent NetOps Assistant** | An *orchestrator* delegates to a read-only *config-analyst* and a draft-only *change-reviewer* over **HMAC-signed, allowlisted, replay-protected handoffs**. Hub-and-spoke only: specialists can't talk to each other. |
+| **Agent-to-app via MCP** | Role-bound `netops-*` MCP servers parse ACLs, lint and diff configs, and draft change proposals. Every tool has MCP annotations, strict schemas, a path jail, redaction and rate limits. **Nothing ever touches a device.** |
+| **Defense in depth** | DefenseClaw decides on every LLM and tool call; lab controls still hold if a verdict is missed. `DCLAB_ENFORCE=0` makes them log-only to isolate DefenseClaw's own results. |
+| **24 inert test cases** | Malicious and obfuscated skills, MCP tool poisoning, traversal, exfil via a third-party app, direct and indirect injection, forged / escalated / relayed agent handoffs, `rm -rf`, `curl \| bash`, C2 beacons, cognitive tampering, HITL, fail-closed, latency |
+| **Dashboard** | Loopback-only, token-gated, strict CSP. Lab readiness steps, posture lights, live DefenseClaw and app decisions, agent handoffs, a patch-panel test matrix and a demo runner. WCAG 2.2 AA oriented, light and dark. |
+| **Conversation trace** | One timeline per run, each agent drawn as a fiber-colored cable, with the DefenseClaw and lab verdict on every tool call. Step-by-step **replay**, deep links, and an **offline HTML report export**. |
+| **Lab Observer MCP** | A read-only MCP server so **Claude Code** can query lab status, results, evidence, runs and verdicts over SSH stdio, with no new network port |
+| **Tamper-evident evidence** | SHA-256 hash-chained ledgers and per-test `evidence/<date>-<TC>/` folders with redacted audit exports and canary state |
+
+### Architecture
 
 ```mermaid
 flowchart LR
@@ -68,7 +136,7 @@ flowchart LR
 
 Details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · Threats → controls: [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md)
 
-## Quick start
+### Quick start
 
 Requires an **isolated VM** (Ubuntu 26.04 LTS tested, Linux x86_64/arm64): 4 vCPU, 8 GB RAM, 30 GB disk. **Never a production or corporate machine.**
 
@@ -85,7 +153,7 @@ bash scripts/lab-user-setup.sh        # Node 26, OpenClaw, uv, dclab (+ tests), 
 # 3. OpenClaw: loopback bind + token auth, then an API key (typed into OpenClaw, never into the repo)
 openclaw onboard --install-daemon
 openclaw models auth paste-api-key --provider openai
-openclaw config set models.providers.openai.agentRuntime.id openclaw   # see Findings #1
+openclaw config set models.providers.openai.agentRuntime.id openclaw   # see finding 1
 
 # 4. DefenseClaw in observe mode, then verify
 defenseclaw quickstart --connector openclaw --mode observe --scanner local --yes
@@ -104,7 +172,7 @@ Adding the three NetOps agents and their MCP servers (`agents/openclaw.netops.js
 ssh -i $env:USERPROFILE\.ssh\<lab_key> -N -L 8765:127.0.0.1:8765 netops@<VM_IP>   # then open http://127.0.0.1:8765
 ```
 
-## `dclab` CLI
+### `dclab` CLI
 
 | Command | Purpose |
 |---|---|
@@ -119,7 +187,7 @@ ssh -i $env:USERPROFILE\.ssh\<lab_key> -N -L 8765:127.0.0.1:8765 netops@<VM_IP> 
 | `dashboard [--port]` | Run the web dashboard on 127.0.0.1 |
 | `genkey` | Print a random 32-byte hex key for `.env` |
 
-## Test plan at a glance
+### Test plan at a glance
 
 | Category | Tests | Observe expects | Action expects |
 |---|---|---|---|
@@ -135,24 +203,10 @@ ssh -i $env:USERPROFILE\.ssh\<lab_key> -N -L 8765:127.0.0.1:8765 netops@<VM_IP> 
 
 Rules of engagement: all fixtures are **inert**, with fake secrets (`FAKE_KEY_DO_NOT_USE_…`), reserved `.invalid` / loopback hosts, and canaries under `/tmp`. Full plan: [`docs/TEST_PLAN.md`](docs/TEST_PLAN.md) · Catalog: [`test-cases/catalog.json`](test-cases/catalog.json)
 
-## Findings from building the lab
-
-Real issues hit while standing this up on Ubuntu 26.04 with OpenClaw 2026.9.8 and DefenseClaw 0.8.10. Each one is a control that would otherwise silently not apply.
-
-| # | Finding | Impact | Fix used here |
-|---|---|---|---|
-| 1 | **OpenAI on the official endpoint defaults to the Codex harness** in OpenClaw (per its config schema) | Agent turns may bypass the OpenClaw runtime that DefenseClaw's plugin hooks | Pin `models.providers.openai.agentRuntime.id = "openclaw"` and use an API-key profile |
-| 2 | `--fail-mode closed` **alone is not fail-closed**. Per `defenseclaw quickstart --help`, transport failures (gateway down or 5xx) always *allow* unless `DEFENSECLAW_STRICT_AVAILABILITY=1` | Stopping the gateway lets risky calls through | Set the env var for TC-RES-01; without it, record a **Gap** |
-| 3 | Run non-interactively (e.g. over SSH), the DefenseClaw installer **silently picks the `codex` connector** and skips the OpenClaw plugin | Nothing is intercepted while it looks installed | `install.sh … \| bash -s -- --connector openclaw --yes` |
-| 4 | ACP Guard covers **editor ↔ agent** only, and OpenClaw isn't an ACP entry point | There's no dedicated agent-to-agent guard | A2A goes through tool calls (`sessions_send`, MCP `a2a_*`) that DefenseClaw inspects, plus signed envelopes |
-| 5 | Ubuntu's default `umask 0002` leaves `~/.config` group-writable, so **OpenClaw refuses to install its gateway service** | The gateway never starts | `chmod 700 ~/.config`, `umask 027` for the lab user |
-| 6 | OpenAI browser sign-in redirects to `localhost:1455`, which **fails when the link is opened on the host** instead of in the VM | Login loops; one-time codes get pasted around | Use `paste-api-key`. Never paste callback URLs or codes anywhere. |
-| 7 | Redacting secrets in pretty-printed JSON with a greedy `\S+` **ate closing quotes** | Agents received invalid JSON from `lint_config` | Secret values stop at quotes, with a regression test |
-
-## Security posture
+### Security posture
 
 - **Isolation:**
-  - dedicated VM, with **no inbound traffic** (`ufw`)
+  - dedicated VM with **no inbound traffic** (`ufw`)
   - everything bound to **127.0.0.1**, checked by `dclab preflight`
   - the agent runs as a **non-root user without sudo**
 - **Least privilege:**
@@ -169,14 +223,16 @@ Real issues hit while standing this up on Ubuntu 26.04 with OpenClaw 2026.9.8 an
   - no behavior instructions in tool descriptions
 - **Dashboard:**
   - accepts loopback clients only, with token login (HttpOnly, SameSite=Strict cookie)
-  - strict CSP with no inline script, a Host-header (DNS-rebinding) check, and an Origin check on POST
-- **Repo hygiene:** no real credentials, IPs or customer configs. Sample configs use RFC 5737 documentation addresses. See [`AGENTS.md`](AGENTS.md) for rules that apply to any AI coding agent working here.
+  - strict CSP with no inline script and only self-hosted fonts
+  - Host-header (DNS-rebinding) and Origin checks
+  - no browser-side page cache of trace content
+- **Repo hygiene:** no real credentials, IPs or customer configs. Sample configs use RFC 5737 documentation addresses. See [`AGENTS.md`](AGENTS.md) for the rules that apply to any AI coding agent working here.
 
-## Repository layout
+### Repository layout
 
 ```
 .
-├── README.md · AGENTS.md · ROADMAP.md
+├── README.md · AGENTS.md · ROADMAP.md · LICENSE · THIRD_PARTY_NOTICES.md
 ├── docs/            REQUIREMENTS · ARCHITECTURE · SETUP · THREAT_MODEL · TEST_PLAN · DEMO_RUNBOOK
 ├── agents/          orchestrator / config-analyst / change-reviewer personas + openclaw.netops.json5
 ├── scripts/         vm-bootstrap.sh (admin, once) · lab-user-setup.sh (lab user) · observe.sh (Lab Observer launcher)
@@ -186,35 +242,21 @@ Real issues hit while standing this up on Ubuntu 26.04 with OpenClaw 2026.9.8 an
 │   ├── mcp_server.py    agents' role-bound NetOps MCP server
 │   ├── observer.py      read-only Lab Observer MCP server for Claude Code
 │   ├── trace.py         end-to-end run correlation (OpenClaw + DefenseClaw + ledgers)
-│   ├── lab.py · cli.py  preflight, canaries, evidence, `dclab` CLI
-│   └── dashboard/       FastAPI + HTMX app, templates, static assets (htmx vendored)
-├── tests/           controls, MCP contracts, observer read-only guarantees, trace, dashboard hardening
+│   ├── lab.py · cli.py  preflight, readiness, canaries, evidence, `dclab` CLI
+│   └── dashboard/       FastAPI + HTMX app, templates, static assets (htmx and fonts self-hosted)
+├── tests/           controls, MCP contracts, observer read-only guarantees, trace, dashboard security + accessibility
 ├── test-cases/      catalog.json + inert fixtures (skills, MCP stubs)
 └── workspace/       sanitized sample configs (incl. an injection fixture)
 ```
 `evidence/`, `report/` and `.dclab/` are created at runtime. Raw evidence and ledgers are git-ignored.
 
-## Development
+### Development
 
 ```bash
 uv sync
-uv run pytest -q        # 32 tests: controls, MCP contracts, observer, trace, dashboard security
+uv run pytest -q        # 44 checks: controls, MCP contracts, observer, trace, dashboard security and accessibility
 ```
-Python 3.11+, `mcp` 2.x, FastAPI, Jinja2, and htmx (vendored, no CDN). Conventions: test IDs `TC-<CATEGORY>-<nn>`; commits `<area>: <change>`. The rules for AI coding agents are in [`AGENTS.md`](AGENTS.md).
-
-## Status
-
-| Phase | Status |
-|---|---|
-| Lab tooling: agents, MCP servers, controls, dashboard, trace, observer, tests | ✅ Built (32 tests passing) |
-| 0 – Isolated VM, non-root lab user, firewall | ✅ |
-| 1 – OpenClaw baseline (installed, onboarded, loopback gateway) | 🟡 Model auth + NetOps agents pending |
-| 2 – DefenseClaw observe | 🟡 Installed; quickstart + interception check pending |
-| 3 – Attack tests (observe) | ☐ |
-| 4 – Action mode + HITL | ☐ |
-| 5 – Observability (Splunk / OTel) | ☐ |
-| 6 – Custom NetOps policy (stretch) | ☐ |
-| 7 – Findings report | ☐ |
+Python 3.11+, `mcp` 2.x, FastAPI, Jinja2, htmx 2 and Atkinson Hyperlegible (both self-hosted, no CDN). Conventions: test IDs `TC-<CATEGORY>-<nn>`; commits `<area>: <change>`.
 
 ## References
 
@@ -227,4 +269,4 @@ Python 3.11+, `mcp` 2.x, FastAPI, Jinja2, and htmx (vendored, no CDN). Conventio
 
 This is an **educational security lab**. Run it only in an isolated VM you own. All attack fixtures are inert by design, so don't point them at real systems, credentials or endpoints.
 
-Licensed under the **[MIT License](LICENSE)**. The vendored htmx is 0BSD. See **[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)** for it and for the separately installed components (DefenseClaw is Apache-2.0 (Cisco); OpenClaw is under the OpenClaw Foundation's license), which this repo does not redistribute.
+Licensed under the **[MIT License](LICENSE)**. The vendored htmx is 0BSD and the Atkinson Hyperlegible fonts are OFL 1.1. See **[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)** for those and for the separately installed components (DefenseClaw is Apache-2.0 (Cisco); OpenClaw is under the OpenClaw Foundation's license), which this repo does not redistribute.

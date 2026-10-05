@@ -119,6 +119,45 @@ def health() -> dict:
     }
 
 
+def readiness() -> list[dict]:
+    """Ordered setup steps derived only from observable lab state (no assumed progress).
+    Each step: label, state (done | todo | waiting), detail, and the next action when not done."""
+    h = health()
+    res = results()
+    total = len(catalog())
+    observed = sum(1 for r in res.values() if "observe" in r)
+    enforced = sum(1 for r in res.values() if "action" in r)
+    handoffs = [r for r in a2a_ledger().read() if r.get("event") == "handoff"]
+    app_calls = [r for r in events_ledger().read() if r.get("kind") == "tool"]
+
+    steps = [
+        ("OpenClaw installed", h["openclaw CLI"], "",
+         "Run scripts/lab-user-setup.sh as the lab user."),
+        ("DefenseClaw installed", h["defenseclaw CLI"], "",
+         "Run scripts/lab-user-setup.sh as the lab user."),
+        ("DefenseClaw is watching OpenClaw", h["gateway :18970"] and h["guardrail :4000"],
+         "Gateway and guardrail proxy are up" if h["gateway :18970"] and h["guardrail :4000"] else
+         "Gateway or guardrail proxy is not running",
+         "defenseclaw quickstart --connector openclaw --mode observe --scanner local --yes"),
+        ("Agents use the NetOps apps", bool(app_calls),
+         f"{len(app_calls)} app calls recorded" if app_calls else "",
+         "Add the NetOps agents (docs/DEMO_RUNBOOK.md §2), then send the TC-BASE-01 prompt."),
+        ("Agents hand work to each other", bool(handoffs),
+         f"{len(handoffs)} signed handoffs recorded" if handoffs else "",
+         "Ask the orchestrator to review edge-fw.cfg; it should delegate to the config-analyst."),
+        ("Attack tests run in observe mode", observed == total, f"{observed} of {total} recorded",
+         "Run each test in observe mode and save evidence from the Run a test panel."),
+        ("Attack tests run in action mode", enforced == total, f"{enforced} of {total} recorded",
+         "Switch DefenseClaw to action mode (runbook Act 3) and run each test again."),
+    ]
+    out, waiting = [], False
+    for label, done, detail, hint in steps:
+        state = "done" if done else ("waiting" if waiting else "todo")
+        out.append({"label": label, "state": state, "detail": detail, "hint": "" if done else hint})
+        waiting = waiting or not done  # later steps wait on the first unfinished one
+    return out
+
+
 # ----------------------------------------------------------------------- evidence
 
 def capture_evidence(tc_id: str, mode: str, result: str | None = None, notes: str = "") -> Path:
