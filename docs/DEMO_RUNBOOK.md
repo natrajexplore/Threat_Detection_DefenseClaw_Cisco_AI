@@ -202,6 +202,33 @@ ssh -i $env:USERPROFILE\.ssh\dclab_vm -N -L 8765:127.0.0.1:8765 netops@<VM_IP>
 ```
 Replace `<VM_IP>` with your VM address (`ip -4 addr` inside the VM). Leave that window open, then browse to **http://127.0.0.1:8765** on Windows. The VM never listens on its LAN IP. Traffic goes through the SSH tunnel, and the dashboard's Host/Origin checks still pass because you use `127.0.0.1:8765` on both ends.
 
+### Lab Observer: let Claude Code query the lab (read-only MCP)
+
+`dclab observe` is a second MCP server, separate from the agents' `netops-*` servers. It lets **Claude Code on your Windows host** ask about the lab directly, for example "which tests are a Gap?", "show the blocked steps in the last run", or "did the a2a ledger verify?".
+
+| Tool | Returns |
+|---|---|
+| `lab_status` | Gateway/guardrail ports, CLIs, ledger integrity, canaries, lab-control mode |
+| `run_preflight` | The full `dclab preflight` checklist as pass/fail |
+| `list_test_cases` / `get_test_case` | Catalog, recorded observe/action results, expected outcomes, evidence folders |
+| `get_evidence` | Per-test `meta.json`, file list and captured event counts |
+| `list_trace_runs` / `get_trace_run` | End-to-end conversation runs and their events, with correlated verdicts |
+| `list_defenseclaw_verdicts` | Summarized `defenseclaw-gateway audit export` |
+| `list_lab_events` | Lab / A2A ledger rows plus the hash-chain check |
+
+How it's secured:
+- **Every tool is read-only.** Each carries `readOnlyHint` and is tested so that no file changes after calling every tool.
+- **Strict inputs.** Inputs are pattern- and range-checked, so things like `../../etc/passwd` are rejected.
+- **No new port.** It runs over **stdio via your SSH key**, as `netops` inside the VM.
+- **Untrusted text is labelled.** Text captured from agents and attack fixtures is returned only under `untrusted` keys, redacted and truncated, because those prompts are injection payloads aimed at *Claude* as well.
+
+Register it **once on Windows**, in local scope, so the IP and key path stay out of the repo:
+```powershell
+claude mcp add --scope local lab-observer -- ssh -i "C:/Users/<you>/.ssh/dclab_vm" -o BatchMode=yes -o ConnectTimeout=10 -T netops@<VM_IP> defenseclaw-openclaw-lab/scripts/observe.sh
+claude mcp get lab-observer        # Status: ✔ Connected
+```
+`scripts/observe.sh` sets `PATH` for nvm and `~/.local/bin`, because SSH runs a non-interactive shell. Without it, the tools report the CLIs as missing. To remove the server: `claude mcp remove lab-observer -s local`.
+
 ---
 
 ## 5. The team demo script (~25 min)

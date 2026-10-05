@@ -188,7 +188,8 @@ def preflight() -> list[tuple[str, bool, str]]:
         add(".env permissions 600", mode == 0o600, oct(mode))
     for var in ("DCLAB_A2A_KEY", "DCLAB_DASH_TOKEN"):
         add(f"{var} set (>=32 chars)", len(os.environ.get(var, "")) >= 32, "")
-    gi = (PROJECT_ROOT / ".gitignore").read_text(encoding="utf-8")
+    gi_path = PROJECT_ROOT / ".gitignore"
+    gi = gi_path.read_text(encoding="utf-8") if gi_path.exists() else ""
     add(".gitignore covers .env and *.db", ".env" in gi and "*.db" in gi, "")
     add("canaries intact", all(v == "intact" for v in canary_status().values()), json.dumps(canary_status()))
     return checks

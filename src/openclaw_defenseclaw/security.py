@@ -96,11 +96,12 @@ def find_injection(text: str) -> list[str]:
 
 # ---------------------------------------------------------------------- redaction
 
+# Secret values stop at quotes so redacting JSON-encoded text never eats a closing '"'.
 _REDACTIONS = [
-    (re.compile(r"(\b(?:enable\s+)?secret\s+\d+\s+)\S+", re.I), r"\1<REDACTED>"),
-    (re.compile(r"(\bpassword\s+(?:\d+\s+)?)\S+", re.I), r"\1<REDACTED>"),
-    (re.compile(r"(\bsnmp-server\s+community\s+)\S+", re.I), r"\1<REDACTED>"),
-    (re.compile(r"(\bkey-string\s+)\S+", re.I), r"\1<REDACTED>"),
+    (re.compile(r"(\b(?:enable\s+)?secret\s+\d+\s+)[^\s\"']+", re.I), r"\1<REDACTED>"),
+    (re.compile(r"(\bpassword\s+(?:\d+\s+)?)[^\s\"']+", re.I), r"\1<REDACTED>"),
+    (re.compile(r"(\bsnmp-server\s+community\s+)[^\s\"']+", re.I), r"\1<REDACTED>"),
+    (re.compile(r"(\bkey-string\s+)[^\s\"']+", re.I), r"\1<REDACTED>"),
     (re.compile(r"FAKE_KEY_DO_NOT_USE_\w*"), "<REDACTED>"),
     (re.compile(r"\bsk-[A-Za-z0-9_\-]{16,}"), "<REDACTED>"),
     (re.compile(r"\bAKIA[0-9A-Z]{16}\b"), "<REDACTED>"),

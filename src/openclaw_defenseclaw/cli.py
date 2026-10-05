@@ -105,6 +105,12 @@ def cmd_mcp(a: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_observe(_: argparse.Namespace) -> int:
+    from .observer import run
+    run()
+    return 0
+
+
 def cmd_dashboard(a: argparse.Namespace) -> int:
     if len(os.environ.get("DCLAB_DASH_TOKEN", "")) < 32:
         print("DCLAB_DASH_TOKEN missing/short in .env — run `dclab genkey` and add it.", file=sys.stderr)
@@ -145,6 +151,8 @@ def main(argv: list[str] | None = None) -> int:
     s = sub.add_parser("mcp", help="run the NetOps MCP server (stdio) for one agent role")
     s.add_argument("--role", required=True, choices=["orchestrator", "config-analyst", "change-reviewer"])
     s.set_defaults(fn=cmd_mcp)
+    sub.add_parser("observe", help="run the read-only Lab Observer MCP server (stdio) for Claude Code"
+                   ).set_defaults(fn=cmd_observe)
     s = sub.add_parser("dashboard", help="run the local web dashboard on 127.0.0.1")
     s.add_argument("--port", type=int, default=8765)
     s.set_defaults(fn=cmd_dashboard)
