@@ -1,5 +1,17 @@
-<div class="chips">
-{% for name, ok in health.items() %}<span class="chip {{ 'ok' if ok else 'bad' }}">{{ '●' }} {{ name }}</span>{% endfor %}
-<span class="chip {{ 'ok' if enforce else 'warn' }}">● lab controls: {{ 'enforce' if enforce else 'observe (DCLAB_ENFORCE=0)' }}</span>
-{% for name, st in canary.items() %}<span class="chip {{ 'ok' if st == 'intact' else 'bad' }}">● canary {{ name }}: {{ st }}</span>{% endfor %}
-</div>
+{# name, word when ok, word when not ok: state is always written, never colour alone #}
+{% set labels = {"gateway :18970": ("DefenseClaw gateway", "up", "down"),
+                 "guardrail :4000": ("Guardrail proxy", "up", "down"),
+                 "defenseclaw CLI": ("DefenseClaw CLI", "installed", "missing"),
+                 "openclaw CLI": ("OpenClaw CLI", "installed", "missing"),
+                 "lab ledger chain": ("App log", "untampered", "tampered"),
+                 "a2a ledger chain": ("Handoff log", "untampered", "tampered")} %}
+<ul class="lights">
+{% for key, ok in health.items() %}{% set l = labels.get(key, (key, "ok", "failing")) %}
+  <li class="light {{ 'ok' if ok else 'bad' }}">{{ l[0] }} <span class="state">{{ l[1] if ok else l[2] }}</span></li>
+{% endfor %}
+  <li class="lights-split" aria-hidden="true"></li>
+  <li class="light {{ 'ok' if enforce else 'warn' }}">Lab controls <span class="state">{{ 'enforcing' if enforce else 'log only' }}</span></li>
+{% for name, st in canary.items() %}
+  <li class="light {{ 'ok' if st == 'intact' else 'bad' }}">Canary {{ name }} <span class="state">{{ st | lower }}</span></li>
+{% endfor %}
+</ul>

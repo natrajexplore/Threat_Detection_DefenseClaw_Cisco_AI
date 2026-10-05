@@ -3,19 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; connect-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; font-src data:; img-src data:; connect-src 'none'">
 <title>NetOps Trace Report</title>
 <style>{{ css | safe }}</style>
 </head>
 <body>
 <header class="top">
-  <div class="brand"><span class="shield" aria-hidden="true">◆</span> NetOps Guard <span class="muted">Trace report{% if tc %} · {{ tc }}{% endif %}</span></div>
-  <span class="small muted">Generated {{ generated }} · redacted lab evidence</span>
+  <div class="brand"><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span> NetOps Guard <span class="muted">Trace report{% if tc %} for {{ tc }}{% endif %}</span></div>
+  <span class="small muted">Generated {{ generated }}. Secrets are redacted.</span>
 </header>
-<main class="export-main">
+<main id="main" class="export-main" tabindex="-1">
   <section class="card trace-main">
     {% include "_trace_toolbar.html" %}
-    <div id="lane-filter" class="chips small" aria-label="Lanes"></div>
+    <div id="lane-filter" aria-label="Show or hide agents"></div>
     <div id="timeline">{% include "_trace_timeline.html" %}</div>
   </section>
   {% include "_trace_drawer.html" %}

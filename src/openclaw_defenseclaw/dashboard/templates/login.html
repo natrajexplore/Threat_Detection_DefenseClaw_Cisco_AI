@@ -1,12 +1,14 @@
 {% extends "base.html" %}
 {% block body %}
-<main class="login">
+<main id="main" class="login" tabindex="-1">
   <form method="post" action="/login" class="card">
-    <h1>NetOps Guard</h1>
-    <p class="muted">DefenseClaw × OpenClaw lab dashboard. Local access only.</p>
-    <label for="token">Dashboard token <span class="muted">(DCLAB_DASH_TOKEN from .env)</span></label>
-    <input id="token" name="token" type="password" autocomplete="off" required autofocus>
-    {% if error %}<p class="bad">Invalid token.</p>{% endif %}
+    <div class="brand"><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span> NetOps Guard</div>
+    <p class="muted">Security console for the DefenseClaw and OpenClaw lab. It only answers on this machine.</p>
+    <label for="token">Dashboard token</label>
+    <input id="token" name="token" type="password" autocomplete="current-password" required autofocus
+           aria-describedby="token-help{% if error %} token-error{% endif %}"{% if error %} aria-invalid="true"{% endif %}>
+    <p id="token-help" class="small muted">The value of DCLAB_DASH_TOKEN in the lab's .env file.</p>
+    {% if error %}<p id="token-error" class="bad" role="alert">That token didn't match. Check DCLAB_DASH_TOKEN and try again.</p>{% endif %}
     <button type="submit">Sign in</button>
   </form>
 </main>

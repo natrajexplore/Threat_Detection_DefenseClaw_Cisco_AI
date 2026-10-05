@@ -1,9 +1,11 @@
 {% if rows %}
 <ul class="feed">
 {% for r in rows %}
-<li><span class="tag v-{{ r.verdict }}">{{ r.verdict }}</span>
-<span class="mono">{{ r.agent }} → {{ r.tool }}</span>
-{% if r.reason %}<div class="muted small">{{ r.reason }}</div>{% endif %}</li>
+<li>
+  <span class="tag v-{{ r.verdict }}">{{ r.verdict }}</span>
+  <span class="agent ln-{{ r.agent }}">{{ r.agent }}</span> called <code>{{ r.tool }}</code>
+  {% if r.reason %}<div class="small muted">{{ r.reason }}</div>{% endif %}
+</li>
 {% endfor %}
 </ul>
-{% else %}<p class="muted">No NetOps MCP tool calls yet.</p>{% endif %}
+{% else %}<p class="empty">No NetOps app calls yet. They appear when an agent reads, lints or diffs a config.</p>{% endif %}

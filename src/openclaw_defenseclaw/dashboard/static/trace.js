@@ -32,7 +32,7 @@
       const lane = h.dataset.lane;
       const b = document.createElement("button");
       b.type = "button";
-      b.className = "chip lane-chip" + (state.hiddenLanes.has(lane) ? " off" : "");
+      b.className = "lane-chip ln-" + lane + (state.hiddenLanes.has(lane) ? " off" : "");
       b.textContent = lane;
       b.setAttribute("aria-pressed", String(!state.hiddenLanes.has(lane)));
       b.addEventListener("click", () => {
@@ -98,25 +98,43 @@
     $("#r-toggle")?.addEventListener("click", () => setReplay(!state.replay));
     $("#r-prev")?.addEventListener("click", () => step(-1));
     $("#r-next")?.addEventListener("click", () => step(1));
-    $("#d-close")?.addEventListener("click", () => { $("#drawer").hidden = true; });
+    const closeDrawer = () => {
+      const d = $("#drawer");
+      if (!d || d.hidden) return;
+      d.hidden = true;
+      $("#timeline .tl-row.selected")?.focus();  // return focus to the event it described
+    };
+    $("#d-close")?.addEventListener("click", closeDrawer);
     document.addEventListener("keydown", (e) => {
       if (e.target.matches("input, select, textarea")) return;
       if (e.key === "ArrowRight" || e.key === " ") { if (state.replay) { e.preventDefault(); step(1); } }
       else if (e.key === "ArrowLeft") step(-1);
-      else if (e.key === "Escape") { const d = $("#drawer"); if (d) d.hidden = true; }
+      else if (e.key === "Escape") closeDrawer();
       else if (e.key === "Enter" && e.target.classList?.contains("ev")) openDrawer(e.target);
     });
     $("#timeline")?.addEventListener("click", (e) => {
       const r = e.target.closest(".tl-row.ev");
       if (r && !e.target.closest("form, a")) openDrawer(r);
     });
-    document.body.addEventListener("click", (e) => {
-      const b = e.target.closest(".run");
-      if (!b) return;
-      $$(".run.active").forEach((x) => x.classList.remove("active"));
-      b.classList.add("active");
+    const markActiveRun = () => {
+      const id = $("#timeline .tl")?.dataset.run;
+      $$(".run").forEach((b) => {
+        const on = b.dataset.run === id;
+        b.classList.toggle("active", on);
+        if (on) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+      });
+    };
+    document.body.addEventListener("htmx:afterSwap", (e) => {
+      if (e.target.id === "timeline") init();
+      if (e.target.id === "timeline" || e.target.id === "runs") markActiveRun();
     });
-    document.body.addEventListener("htmx:afterSwap", (e) => { if (e.target.id === "timeline") init(); });
+    // A refresh replaces the run buttons; skip it while keyboard focus is inside the list.
+    document.body.addEventListener("htmx:beforeRequest", (e) => {
+      const runs = $("#runs");
+      if (runs && e.target === runs && runs.contains(document.activeElement)) e.preventDefault();
+    });
+    const initial = $("#timeline")?.dataset.initialRun;
+    if (initial && window.htmx) htmx.ajax("GET", "/p/trace/run/" + encodeURIComponent(initial), "#timeline");
     setInterval(() => {
       if (window.htmx && $("#f-live")?.checked && !state.replay && state.runUrl) {
         htmx.ajax("GET", state.runUrl, "#timeline");

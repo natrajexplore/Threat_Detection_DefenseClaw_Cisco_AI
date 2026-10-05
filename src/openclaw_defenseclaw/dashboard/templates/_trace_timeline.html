@@ -1,43 +1,44 @@
-{% set icons = {"message": "💬", "tool_call": "🛠", "tool_result": "↩", "handoff": "🔁", "verdict": "🛡", "lab": "🧱"} %}
+{% set kinds = {"message": "Message", "tool_call": "Tool call", "tool_result": "Result", "handoff": "Handoff", "verdict": "DefenseClaw", "lab": "Lab control"} %}
+{% set n = run.lanes | length %}
 <div class="tl-head">
   <div>
-    <strong>{{ run.title or "Untitled run" }}</strong>
-    <div class="small muted">{{ run.start | ts }} → {{ run.end | ts }} · {{ run.count }} events{% if run.blocked %} · <span class="bad">{{ run.blocked }} blocked</span>{% endif %}</div>
+    <strong>{{ run.title or "Run without an operator prompt" }}</strong>
+    <div class="small muted">{{ run.start | ts }} to {{ run.end | hms }}, {{ run.count }} events{% if run.blocked %}, <span class="bad">{{ run.blocked }} blocked</span>{% endif %}</div>
   </div>
   {% if exportable %}
-  <form class="export" hx-post="/a/trace/export" hx-target="#export-result" hx-swap="innerHTML">
+  <form class="export" hx-post="/a/trace/export" hx-target="#export-result" hx-swap="innerHTML" hx-disabled-elt="find button">
     <input type="hidden" name="run" value="{{ run.id }}">
-    <select name="tc" aria-label="Attach to test case"><option value="">no test case</option>
+    <select name="tc" aria-label="Save with test case"><option value="">No test case</option>
       {% for c in cases %}<option>{{ c.id }}</option>{% endfor %}</select>
-    <button type="submit">Export report</button>
-    <a class="btn ghost" href="/trace/run/{{ run.id }}/download">Download</a>
+    <button type="submit">Save report</button>
+    <a class="btn" href="/trace/run/{{ run.id }}/download">Download report</a>
   </form>
   {% endif %}
 </div>
 <div id="export-result" aria-live="polite"></div>
-<div class="tl" data-run="{{ run.id }}" role="list">
-  <div class="tl-row tl-lanes lanes-{{ run.lanes | length }}" aria-hidden="true">
+<div class="tl" data-run="{{ run.id }}" role="list" aria-label="Events in time order">
+  <div class="tl-row tl-lanes lanes-{{ n }}" aria-hidden="true">
     <div class="tl-time"></div>
-    {% for l in run.lanes %}<div class="lane-h c{{ loop.index }}" data-lane="{{ l }}">{{ l }}</div>{% endfor %}
+    {% for l in run.lanes %}<div class="lane-h c{{ loop.index }} ln-{{ l }}" data-lane="{{ l }}">{{ l }}</div>{% endfor %}
   </div>
   {% for e in run.events %}
   {% set col = run.lanes.index(e.lane) + 1 %}
   {% set tcol = (run.lanes.index(e.target) + 1) if e.target in run.lanes else 0 %}
-  <div class="tl-row lanes-{{ run.lanes | length }} ev k-{{ e.kind }} w-{{ e.worst or 'none' }}" role="listitem" tabindex="0"
+  <div class="tl-row lanes-{{ n }} ev k-{{ e.kind }} w-{{ e.worst or 'none' }}" role="listitem" tabindex="0"
        data-lane="{{ e.lane }}" data-worst="{{ e.worst }}" data-i="{{ loop.index0 }}"
-       data-meta="{{ e.ts | hms }} · {{ e.lane }}{% if e.target %} → {{ e.target }}{% endif %} · {{ e.source }} · {{ e.kind }}">
-    <div class="tl-time mono small">{{ e.ts | hms }}</div>
+       data-meta="{{ e.ts | hms }}, {{ e.lane }}{% if e.target %} to {{ e.target }}{% endif %}, {{ kinds.get(e.kind, e.kind) | lower }} from {{ e.source }}">
+    <div class="tl-time mono">{{ e.ts | hms }}</div>
+    {% for l in run.lanes %}<span class="wire c{{ loop.index }} ln-{{ l }}" aria-hidden="true"></span>{% endfor %}
     {% if tcol and tcol != col %}
-    <div class="bubble arrow s{{ [col, tcol] | min }} e{{ ([col, tcol] | max) + 1 }} {{ 'rtl' if tcol < col else 'ltr' }}">
+    <div class="bubble arrow s{{ [col, tcol] | min }} e{{ ([col, tcol] | max) + 1 }} {{ 'rtl' if tcol < col else 'ltr' }} ln-{{ e.lane }}">
     {% else %}
-    <div class="bubble c{{ col }}">
+    <div class="bubble c{{ col }} ln-{{ e.lane }}">
     {% endif %}
       <div class="b-head">
-        <span class="kind" aria-hidden="true">{{ icons.get(e.kind, "•") }}</span>
+        <span class="kind">{{ kinds.get(e.kind, e.kind) }}</span>
         <span class="b-title">{{ e.title }}</span>
-        <span class="src small muted">{{ e.source }}</span>
         {% if e.verdict %}<span class="tag v-{{ e.verdict }}">{{ e.verdict }}</span>{% endif %}
-        {% for v in e.verdicts %}<span class="tag v-{{ v.verdict }}" title="{{ v.detail }}">{{ v.source }}: {{ v.verdict }}</span>{% endfor %}
+        {% for v in e.verdicts %}<span class="tag v-{{ v.verdict }}" title="{{ v.detail }}">{{ 'DefenseClaw' if v.source == 'defenseclaw' else 'Lab' }}: {{ v.verdict }}</span>{% endfor %}
       </div>
       {% if e.body %}<div class="b-body">{{ e.body }}</div>{% endif %}
       <pre class="raw" hidden>{{ e.raw }}</pre>

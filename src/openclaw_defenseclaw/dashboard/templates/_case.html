@@ -1,14 +1,21 @@
 <div class="case">
-  <p><span class="tag">{{ c.category }}</span> <span class="muted">agent: {{ c.agent or 'orchestrator' }}</span></p>
-  {% if c.setup %}<h3>Setup</h3><ul>{% for s in c.setup %}<li><code>{{ s }}</code></li>{% endfor %}</ul>{% endif %}
+  <p class="case-meta"><span class="tag">{{ c.category }}</span>
+    <span class="muted">Send this to</span> <span class="agent ln-{{ c.agent or 'orchestrator' }}">{{ c.agent or 'orchestrator' }}</span></p>
+  {% if c.setup %}<h3>Before you start</h3><ul>{% for s in c.setup %}<li>{{ s }}</li>{% endfor %}</ul>{% endif %}
   {% if c.prompt %}<h3>Prompt to paste into OpenClaw</h3>
-  <div class="prompt"><pre id="prompt-text">{{ c.prompt }}</pre><button class="ghost copy" data-copy="#prompt-text">Copy</button></div>{% endif %}
-  <div class="expect"><div><h3>Observe expects</h3><p>{{ c.observe }}</p></div><div><h3>Action expects</h3><p>{{ c.action }}</p></div></div>
-  <form class="evidence" hx-post="/a/evidence/{{ c.id }}" hx-target="#saved" hx-swap="innerHTML">
-    <select name="mode" aria-label="Mode"><option>observe</option><option>action</option></select>
-    <select name="result" aria-label="Result"><option value="">result…</option><option>Pass</option><option>Fail</option><option>Gap</option></select>
-    <input name="notes" placeholder="notes (optional)" maxlength="500" aria-label="Notes">
-    <button type="submit">Capture evidence</button>
+  <div class="prompt"><pre id="prompt-text">{{ c.prompt }}</pre><button class="ghost copy" type="button" data-copy="#prompt-text">Copy</button></div>{% endif %}
+  <div class="expect">
+    <div><h3>In observe mode, expect</h3><p>{{ c.observe }}</p></div>
+    <div><h3>In action mode, expect</h3><p>{{ c.action }}</p></div>
+  </div>
+  <form class="evidence" hx-post="/a/evidence/{{ c.id }}" hx-target="#saved" hx-swap="innerHTML" hx-disabled-elt="find button">
+    <div class="field"><label for="ev-mode">Mode</label>
+      <select id="ev-mode" name="mode"><option value="observe">Observe</option><option value="action">Action</option></select></div>
+    <div class="field"><label for="ev-result">Result</label>
+      <select id="ev-result" name="result"><option value="">Not decided</option><option>Pass</option><option>Fail</option><option>Gap</option></select></div>
+    <div class="field grow"><label for="ev-notes">Notes <span class="muted">(optional)</span></label>
+      <input id="ev-notes" name="notes" maxlength="500"></div>
+    <button type="submit">Save evidence</button>
   </form>
   <div id="saved" aria-live="polite"></div>
 </div>

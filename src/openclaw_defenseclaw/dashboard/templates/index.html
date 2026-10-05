@@ -1,44 +1,39 @@
 {% extends "base.html" %}
 {% block body %}
-<header class="top">
-  <div class="brand"><span class="shield" aria-hidden="true">◆</span> NetOps Guard <span class="muted">DefenseClaw × OpenClaw</span></div>
-  <nav class="nav"><a href="/" aria-current="page">Overview</a><a href="/trace">Conversation trace</a>
-    <form method="post" action="/logout"><button class="ghost" type="submit">Sign out</button></form></nav>
-</header>
-
-<main class="grid">
-  <section class="card span-12" aria-labelledby="h-health">
-    <div class="card-h"><h2 id="h-health">Posture</h2>
-      <button class="ghost" hx-post="/a/canary" hx-target="#health" hx-swap="innerHTML">Reset canaries</button></div>
-    <div id="health" hx-get="/p/health" hx-trigger="load, every 5s">Loading…</div>
+{% set page = "overview" %}{% include "_topbar.html" %}
+<main id="main" class="grid" tabindex="-1">
+  <section class="card posture span-12" aria-labelledby="h-health">
+    <div class="card-h"><h2 id="h-health">Lab status</h2>
+      <button class="ghost" hx-post="/a/canary" hx-target="#health" hx-swap="innerHTML" hx-disabled-elt="this">Reset canary files</button></div>
+    <div id="health" hx-get="/p/health" hx-trigger="load, every 5s"><p class="empty">Checking services…</p></div>
   </section>
 
   <section class="card span-7" aria-labelledby="h-demo">
-    <div class="card-h"><h2 id="h-demo">Demo runner</h2>
+    <div class="card-h"><h2 id="h-demo">Run a test</h2>
       <select id="case-pick" name="tc" aria-label="Test case">
-        {% for c in cases %}<option value="{{ c.id }}">{{ c.id }} — {{ c.title }}</option>{% endfor %}
+        {% for c in cases %}<option value="{{ c.id }}">{{ c.id }}: {{ c.title }}</option>{% endfor %}
       </select></div>
-    <div id="case"></div>
+    <div id="case"><p class="empty">Loading test…</p></div>
   </section>
 
   <section class="card span-5" aria-labelledby="h-a2a">
-    <div class="card-h"><h2 id="h-a2a">Agent-to-agent handoffs</h2></div>
-    <div id="a2a" hx-get="/p/a2a" hx-trigger="load, every 4s"></div>
+    <div class="card-h"><h2 id="h-a2a">Agent handoffs</h2><span class="muted">Signed task envelopes</span></div>
+    <div id="a2a" hx-get="/p/a2a" hx-trigger="load, every 4s"><p class="empty">Loading handoffs…</p></div>
   </section>
 
   <section class="card span-7" aria-labelledby="h-verdicts">
-    <div class="card-h"><h2 id="h-verdicts">DefenseClaw verdicts</h2><span class="muted">audit export · live</span></div>
-    <div id="verdicts" hx-get="/p/verdicts" hx-trigger="load, every 5s"></div>
+    <div class="card-h"><h2 id="h-verdicts">DefenseClaw decisions</h2><span class="muted">Newest first, refreshes every 5 seconds</span></div>
+    <div id="verdicts" hx-get="/p/verdicts" hx-trigger="load, every 5s"><p class="empty">Loading DefenseClaw decisions…</p></div>
   </section>
 
   <section class="card span-5" aria-labelledby="h-lab">
-    <div class="card-h"><h2 id="h-lab">Lab controls (defense in depth)</h2></div>
-    <div id="lab" hx-get="/p/lab" hx-trigger="load, every 4s"></div>
+    <div class="card-h"><h2 id="h-lab">NetOps app decisions</h2><span class="muted">Lab controls inside the MCP apps</span></div>
+    <div id="lab" hx-get="/p/lab" hx-trigger="load, every 4s"><p class="empty">Loading app decisions…</p></div>
   </section>
 
   <section class="card span-12" aria-labelledby="h-matrix">
-    <div class="card-h"><h2 id="h-matrix">Test matrix</h2><span class="muted">observe vs action</span></div>
-    <div id="matrix" hx-get="/p/matrix" hx-trigger="load, every 10s"></div>
+    <div class="card-h"><h2 id="h-matrix">Test results</h2><span class="muted">Each test runs twice: observe mode, then action mode</span></div>
+    <div id="matrix" hx-get="/p/matrix" hx-trigger="load, every 10s"><p class="empty">Loading test results…</p></div>
   </section>
 </main>
 {% endblock %}

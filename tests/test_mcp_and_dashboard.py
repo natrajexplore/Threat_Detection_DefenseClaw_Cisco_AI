@@ -87,7 +87,16 @@ def test_dashboard_security():
     assert r.status_code == 303 and "httponly" in r.headers["set-cookie"].lower()
     r = c.get("/")
     assert r.status_code == 200 and "script-src 'self'" in r.headers["content-security-policy"]
+    # Browsers send `Origin: null` on form POSTs under "no-referrer"; the policy must keep the real origin.
+    assert c.get("/login").headers["referrer-policy"] == "same-origin"
+    assert c.post("/logout", headers={"origin": "null"}, follow_redirects=False).status_code == 403
     assert c.get("/p/matrix").status_code == 200
+    # Self-hosted fonts must be allowed by CSP and actually served; nothing loads from a CDN.
+    assert "font-src 'self'" in r.headers["content-security-policy"]
+    font = c.get("/static/fonts/atkinson-next.woff2")
+    assert font.status_code == 200 and font.content[:4] == b"wOF2"
+    css = c.get("/static/app.css").text
+    assert "https://" not in css and "uppercase" not in css
     assert c.get("/p/case/TC-A2A-01").status_code == 200
     outside = TestClient(create_app(port=8765), base_url="http://127.0.0.1:8765", client=("10.0.0.5", 5000))
     assert outside.get("/login").status_code == 403

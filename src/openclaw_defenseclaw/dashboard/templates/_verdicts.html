@@ -1,13 +1,13 @@
-{% if error %}<p class="warn-box">Audit export unavailable: {{ error }}</p>{% endif %}
+{% if error %}<p class="warn-box">Can't read DefenseClaw's audit log: {{ error }}</p>{% endif %}
 {% if rows %}
 <div class="table-wrap"><table>
-<thead><tr><th>Time</th><th>Verdict</th><th>Severity</th><th>Subject</th><th>Detail</th></tr></thead>
+<thead><tr><th scope="col">Time</th><th scope="col">Decision</th><th scope="col">Severity</th><th scope="col">What</th><th scope="col">Reason</th></tr></thead>
 <tbody>
 {% for r in rows %}
-<tr><td class="mono">{{ r.time[:19] }}</td>
-<td><span class="tag v-{{ r.verdict or 'none' }}">{{ r.verdict or '—' }}</span></td>
-<td><span class="tag s-{{ r.severity or 'none' }}">{{ r.severity or '—' }}</span></td>
-<td class="mono">{{ r.subject }}</td><td>{{ r.detail }}</td></tr>
+<tr><td class="mono">{{ r.time[11:19] or r.time[:19] }}</td>
+<td>{% if r.verdict %}<span class="tag v-{{ r.verdict }}">{{ r.verdict }}</span>{% else %}<span class="muted">none</span>{% endif %}</td>
+<td><span class="s-{{ r.severity or 'none' }}">{{ r.severity or '' }}</span></td>
+<td><code>{{ r.subject }}</code></td><td>{{ r.detail }}</td></tr>
 {% endfor %}
 </tbody></table></div>
-{% elif not error %}<p class="muted">No events yet. Send a prompt through OpenClaw.</p>{% endif %}
+{% elif not error %}<p class="empty">No decisions yet. Send a prompt to an agent in OpenClaw and they appear here.</p>{% endif %}
