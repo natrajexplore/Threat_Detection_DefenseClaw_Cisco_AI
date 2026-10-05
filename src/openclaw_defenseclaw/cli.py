@@ -73,6 +73,27 @@ def cmd_ledger(a: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_trace(a: argparse.Namespace) -> int:
+    from . import trace
+    errors: list[str] = []
+    runs = trace.build(errors)
+    for e in errors:
+        print(f"  ! {e}", file=sys.stderr)
+    if not a.export:
+        for r in runs[:a.limit]:
+            print(f"{r['id']}  {r['count']:>4} events  {r['blocked']:>2} blocked  {' > '.join(r['lanes'])}  {r['title']}")
+        if not runs:
+            print("No runs yet. Send a prompt to an agent in OpenClaw first.")
+        return 0
+    run = runs[0] if a.export == "latest" else next((r for r in runs if r["id"] == a.export), None)
+    if run is None:
+        print(f"run {a.export} not found; list runs with `dclab trace`", file=sys.stderr)
+        return 1
+    from .dashboard.app import save_trace_report
+    print(f"Saved {save_trace_report(run, a.tc or '')}")
+    return 0
+
+
 def cmd_genkey(_: argparse.Namespace) -> int:
     print(secrets.token_hex(32))
     return 0
@@ -115,6 +136,11 @@ def main(argv: list[str] | None = None) -> int:
     s.add_argument("--notes")
     s.set_defaults(fn=cmd_evidence)
     sub.add_parser("ledger", help="verify hash chains of lab ledgers").set_defaults(fn=cmd_ledger)
+    s = sub.add_parser("trace", help="list end-to-end conversation runs, or --export one as offline HTML")
+    s.add_argument("--export", metavar="RUN_ID|latest")
+    s.add_argument("--tc", help="attach the report to a test case evidence folder")
+    s.add_argument("--limit", type=int, default=20)
+    s.set_defaults(fn=cmd_trace)
     sub.add_parser("genkey", help="print a random 32-byte hex key").set_defaults(fn=cmd_genkey)
     s = sub.add_parser("mcp", help="run the NetOps MCP server (stdio) for one agent role")
     s.add_argument("--role", required=True, choices=["orchestrator", "config-analyst", "change-reviewer"])

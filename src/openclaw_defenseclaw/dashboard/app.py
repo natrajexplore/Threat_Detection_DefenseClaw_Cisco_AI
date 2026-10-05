@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import hmac
 import ipaddress
 import os
+import re
+import time
 from pathlib import Path
 
 from fastapi import FastAPI, Form, Request
@@ -12,13 +15,54 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from .. import lab
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+
+from .. import lab, trace
 from ..security import a2a_ledger, events_ledger
 
 HERE = Path(__file__).parent
 COOKIE = "dclab_session"
 CSP = ("default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
        "connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'")
+
+
+def _fmt_ts(v: float) -> str:
+    return dt.datetime.fromtimestamp(v).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def _fmt_hms(v: float) -> str:
+    return dt.datetime.fromtimestamp(v).strftime("%H:%M:%S")
+
+
+def _add_filters(env: Environment) -> Environment:
+    env.filters["ts"] = _fmt_ts
+    env.filters["hms"] = _fmt_hms
+    return env
+
+
+def render_trace_report(run: dict, tc: str = "") -> str:
+    """Self-contained offline HTML report (inline CSS/JS, no network, redacted content)."""
+    env = _add_filters(Environment(loader=FileSystemLoader(HERE / "templates"),
+                                   autoescape=select_autoescape(["html"])))
+    return env.get_template("trace_export.html").render(
+        run=run, tc=tc, exportable=False, live=False, cases=[],
+        generated=_fmt_ts(time.time()),
+        css=(HERE / "static" / "app.css").read_text(encoding="utf-8"),
+        js=(HERE / "static" / "trace.js").read_text(encoding="utf-8").replace("</", "<\\/"))
+
+
+def save_trace_report(run: dict, tc: str = "") -> Path:
+    if tc and not lab.TC_ID.match(tc):
+        raise ValueError("bad test id")
+    if tc:
+        lab.case(tc)
+        out = lab.EVIDENCE / f"{dt.date.today():%Y-%m-%d}-{tc}"
+    else:
+        out = lab.EVIDENCE / "traces"
+    out.mkdir(parents=True, exist_ok=True)
+    path = out / f"trace-{run['id']}.html"
+    path.write_text(render_trace_report(run, tc), encoding="utf-8")
+    return path
 
 
 def create_app(port: int = 8765) -> FastAPI:
@@ -28,6 +72,7 @@ def create_app(port: int = 8765) -> FastAPI:
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
     app.mount("/static", StaticFiles(directory=HERE / "static"), name="static")
     tpl = Jinja2Templates(directory=HERE / "templates")  # autoescape on for .html
+    _add_filters(tpl.env)
 
     def authed(request: Request) -> bool:
         return hmac.compare_digest(request.cookies.get(COOKIE, ""), token)
@@ -130,5 +175,47 @@ def create_app(port: int = 8765) -> FastAPI:
         except (KeyError, ValueError) as exc:
             return HTMLResponse(f"error: {exc}", status_code=400)
         return tpl.TemplateResponse(request, "_saved.html", {"path": out.relative_to(lab.PROJECT_ROOT)})
+
+    # ------------------------------------------------------------ conversation trace
+
+    run_id_rx = re.compile(r"^\d{1,12}$")
+
+    @app.get("/trace", response_class=HTMLResponse)
+    def trace_page(request: Request):
+        return tpl.TemplateResponse(request, "trace.html", {"live": True})
+
+    @app.get("/p/trace/runs", response_class=HTMLResponse)
+    def p_trace_runs(request: Request):
+        errors: list[str] = []
+        runs = trace.build(errors)
+        return tpl.TemplateResponse(request, "_trace_runs.html", {"runs": runs[:50], "errors": errors})
+
+    @app.get("/p/trace/run/{run_id}", response_class=HTMLResponse)
+    def p_trace_run(request: Request, run_id: str):
+        run = trace.run_by_id(run_id) if run_id_rx.match(run_id) else None
+        if run is None:
+            return HTMLResponse("<p class='muted'>Run not found (it may have rolled into a newer run).</p>",
+                                status_code=404)
+        return tpl.TemplateResponse(request, "_trace_timeline.html",
+                                    {"run": run, "exportable": True, "cases": lab.catalog()})
+
+    @app.post("/a/trace/export", response_class=HTMLResponse)
+    def a_trace_export(request: Request, run: str = Form(...), tc: str = Form("")):
+        found = trace.run_by_id(run) if run_id_rx.match(run) else None
+        if found is None:
+            return HTMLResponse("run not found", status_code=404)
+        try:
+            path = save_trace_report(found, tc)
+        except (KeyError, ValueError) as exc:
+            return HTMLResponse(f"error: {exc}", status_code=400)
+        return tpl.TemplateResponse(request, "_trace_saved.html", {"path": path.relative_to(lab.PROJECT_ROOT)})
+
+    @app.get("/trace/run/{run_id}/download")
+    def trace_download(run_id: str):
+        found = trace.run_by_id(run_id) if run_id_rx.match(run_id) else None
+        if found is None:
+            return HTMLResponse("run not found", status_code=404)
+        return Response(render_trace_report(found), media_type="text/html; charset=utf-8",
+                        headers={"Content-Disposition": f'attachment; filename="netops-trace-{run_id}.html"'})
 
     return app

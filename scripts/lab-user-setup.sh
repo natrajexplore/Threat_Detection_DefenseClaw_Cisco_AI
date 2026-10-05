@@ -51,7 +51,8 @@ uv run dclab canary
 
 echo "==> DefenseClaw (official installer; verifies checksums, cosign signature if present)"
 if ! command -v defenseclaw >/dev/null; then
-  curl -LsSf https://github.com/cisco-ai-defense/defenseclaw/releases/latest/download/install.sh | bash
+  # Without --connector/--yes a non-interactive run (e.g. over SSH) silently falls back to the codex connector.
+  curl -LsSf https://github.com/cisco-ai-defense/defenseclaw/releases/latest/download/install.sh | bash -s -- --connector openclaw --yes
   export PATH="$HOME/.local/bin:$PATH"
 fi
 defenseclaw --version || true

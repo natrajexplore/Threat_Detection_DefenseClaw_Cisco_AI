@@ -1,0 +1,12 @@
+{% for e in errors %}<p class="warn-box small">{{ e }}</p>{% endfor %}
+{% if runs %}
+<ul class="run-list">
+{% for r in runs %}
+<li><button type="button" class="run" hx-get="/p/trace/run/{{ r.id }}" hx-target="#timeline" data-run="{{ r.id }}">
+  <span class="run-title">{{ r.title or "Untitled run" }}</span>
+  <span class="small muted">{{ r.start | ts }} · {{ r.count }} events · {{ r.lanes | length }} lanes</span>
+  {% if r.blocked %}<span class="tag v-block">{{ r.blocked }} blocked</span>{% endif %}
+</button></li>
+{% endfor %}
+</ul>
+{% else %}<p class="muted">No activity yet. Send a prompt to an agent in OpenClaw, then come back.</p>{% endif %}

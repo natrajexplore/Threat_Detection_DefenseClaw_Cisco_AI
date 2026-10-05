@@ -58,7 +58,9 @@ uv run dclab preflight                     # all PASS before testing
 uv run dclab dashboard                     # http://127.0.0.1:8765
 ```
 
-`dclab` commands: `preflight`, `canary [--verify]`, `cases`, `show <TC>`, `evidence <TC> --mode observe|action [--result]`, `ledger`, `genkey`, `mcp --role <agent>`, `dashboard`.
+`dclab` commands: `preflight`, `canary [--verify]`, `cases`, `show <TC>`, `evidence <TC> --mode observe|action [--result]`, `trace [--export RUN|latest --tc TC]`, `ledger`, `genkey`, `mcp --role <agent>`, `dashboard`.
+
+The dashboard's **Conversation trace** view shows each run end to end: operator → orchestrator → specialists → NetOps apps, with the DefenseClaw and lab-control verdict on every tool call. It has a step-by-step **replay** mode for live demos and **exports a single offline HTML report** for the team. See `docs/DEMO_RUNBOOK.md` §4.
 
 Manual DefenseClaw-only path (from `docs/SETUP.md`):
 

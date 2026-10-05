@@ -2,7 +2,8 @@
 {% block body %}
 <header class="top">
   <div class="brand"><span class="shield" aria-hidden="true">◆</span> NetOps Guard <span class="muted">DefenseClaw × OpenClaw</span></div>
-  <form method="post" action="/logout"><button class="ghost" type="submit">Sign out</button></form>
+  <nav class="nav"><a href="/" aria-current="page">Overview</a><a href="/trace">Conversation trace</a>
+    <form method="post" action="/logout"><button class="ghost" type="submit">Sign out</button></form></nav>
 </header>
 
 <main class="grid">

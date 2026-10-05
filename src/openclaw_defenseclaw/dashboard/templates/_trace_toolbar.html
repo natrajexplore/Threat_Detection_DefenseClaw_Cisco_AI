@@ -1,0 +1,10 @@
+<div class="toolbar" role="toolbar" aria-label="Trace controls">
+  <input id="f-search" type="search" placeholder="Search…" aria-label="Search events">
+  <label class="chk"><input id="f-blocked" type="checkbox"> Blocked / flagged only</label>
+  {% if live %}<label class="chk"><input id="f-live" type="checkbox"> Live</label>{% endif %}
+  <span class="sep" aria-hidden="true"></span>
+  <button class="ghost" id="r-toggle" type="button" aria-pressed="false">▶ Replay</button>
+  <button class="ghost" id="r-prev" type="button" disabled aria-label="Previous step">◀</button>
+  <span id="r-pos" class="muted small" aria-live="polite"></span>
+  <button class="ghost" id="r-next" type="button" disabled aria-label="Next step">▶</button>
+</div>

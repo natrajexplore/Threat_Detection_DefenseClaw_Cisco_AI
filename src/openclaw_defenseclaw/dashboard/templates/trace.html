@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block body %}
+<header class="top">
+  <div class="brand"><span class="shield" aria-hidden="true">◆</span> NetOps Guard <span class="muted">Conversation trace</span></div>
+  <nav class="nav"><a href="/">Overview</a><a href="/trace" aria-current="page">Conversation trace</a>
+    <form method="post" action="/logout"><button class="ghost" type="submit">Sign out</button></form></nav>
+</header>
+<main class="trace-layout">
+  <aside class="card runs" aria-labelledby="h-runs">
+    <div class="card-h"><h2 id="h-runs">Runs</h2><span class="muted small">newest first</span></div>
+    <div id="runs" hx-get="/p/trace/runs" hx-trigger="load, every 10s"></div>
+  </aside>
+  <section class="card trace-main" aria-labelledby="h-trace">
+    <div class="card-h"><h2 id="h-trace">End-to-end timeline</h2>
+      {% include "_trace_toolbar.html" %}
+    </div>
+    <div id="lane-filter" class="chips small" aria-label="Lanes"></div>
+    <div id="timeline"><p class="muted">Pick a run on the left.</p></div>
+  </section>
+  {% include "_trace_drawer.html" %}
+</main>
+<script src="/static/trace.js" defer></script>
+{% endblock %}
