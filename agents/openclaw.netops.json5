@@ -1,0 +1,55 @@
+// NetOps Assistant: merge into ~/.openclaw/openclaw.json. Do NOT replace the whole file,
+// because DefenseClaw adds its own plugin entries there.
+// Schema is from docs.openclaw.ai (concepts/multi-agent, tools/mcp), checked 2026-10.
+// Replace /home/netops/defenseclaw-openclaw-lab with your clone path.
+// Tool names (exec, write, edit, apply_patch, browser): confirm them in Control UI ->
+// Connectors -> Tool access for your OpenClaw release before relying on deny lists.
+{
+  agents: {
+    ownership: "explicit",
+    entries: {
+      orchestrator: {
+        name: "NetOps Orchestrator",
+        workspace: "~/.openclaw/workspace-orchestrator",
+        identity: { name: "NetOps Orchestrator" },
+        tools: {
+          // exec is left on ONLY so DefenseClaw's before_tool_call gating can be demonstrated.
+          deny: ["write", "edit", "apply_patch", "browser"],
+          elevated: { enabled: false }
+        },
+        subagents: { allowAgents: ["config-analyst", "change-reviewer"], delegationMode: "prefer" }
+      },
+      "config-analyst": {
+        name: "Config Analyst",
+        workspace: "~/.openclaw/workspace-config-analyst",
+        identity: { name: "Config Analyst" },
+        tools: { deny: ["exec", "process", "write", "edit", "apply_patch", "browser", "web_fetch"], elevated: { enabled: false } },
+        subagents: { allowAgents: [] },
+        sandbox: { mode: "all", scope: "agent" }
+      },
+      "change-reviewer": {
+        name: "Change Reviewer",
+        workspace: "~/.openclaw/workspace-change-reviewer",
+        identity: { name: "Change Reviewer" },
+        tools: { deny: ["exec", "process", "write", "edit", "apply_patch", "browser", "web_fetch"], elevated: { enabled: false } },
+        subagents: { allowAgents: [] },
+        sandbox: { mode: "all", scope: "agent" }
+      }
+    }
+  },
+  tools: {
+    // OpenClaw gates WHICH agents may talk; direction (hub-and-spoke) is enforced by the
+    // signed-handoff allowlist in src/openclaw_defenseclaw/security.py.
+    agentToAgent: { enabled: true, allow: ["orchestrator", "config-analyst", "change-reviewer"] }
+  },
+  mcp: {
+    servers: {
+      "netops-orchestrator": { command: "uv", args: ["run", "dclab", "mcp", "--role", "orchestrator"],
+                               cwd: "/home/netops/defenseclaw-openclaw-lab", transport: "stdio", enabled: true },
+      "netops-analyst":      { command: "uv", args: ["run", "dclab", "mcp", "--role", "config-analyst"],
+                               cwd: "/home/netops/defenseclaw-openclaw-lab", transport: "stdio", enabled: true },
+      "netops-reviewer":     { command: "uv", args: ["run", "dclab", "mcp", "--role", "change-reviewer"],
+                               cwd: "/home/netops/defenseclaw-openclaw-lab", transport: "stdio", enabled: true }
+    }
+  }
+}

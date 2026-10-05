@@ -1,0 +1,5 @@
+<div class="chips">
+{% for name, ok in health.items() %}<span class="chip {{ 'ok' if ok else 'bad' }}">{{ '●' }} {{ name }}</span>{% endfor %}
+<span class="chip {{ 'ok' if enforce else 'warn' }}">● lab controls: {{ 'enforce' if enforce else 'observe (DCLAB_ENFORCE=0)' }}</span>
+{% for name, st in canary.items() %}<span class="chip {{ 'ok' if st == 'intact' else 'bad' }}">● canary {{ name }}: {{ st }}</span>{% endfor %}
+</div>

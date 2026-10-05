@@ -1,0 +1,13 @@
+{% if error %}<p class="warn-box">Audit export unavailable: {{ error }}</p>{% endif %}
+{% if rows %}
+<div class="table-wrap"><table>
+<thead><tr><th>Time</th><th>Verdict</th><th>Severity</th><th>Subject</th><th>Detail</th></tr></thead>
+<tbody>
+{% for r in rows %}
+<tr><td class="mono">{{ r.time[:19] }}</td>
+<td><span class="tag v-{{ r.verdict or 'none' }}">{{ r.verdict or '—' }}</span></td>
+<td><span class="tag s-{{ r.severity or 'none' }}">{{ r.severity or '—' }}</span></td>
+<td class="mono">{{ r.subject }}</td><td>{{ r.detail }}</td></tr>
+{% endfor %}
+</tbody></table></div>
+{% elif not error %}<p class="muted">No events yet. Send a prompt through OpenClaw.</p>{% endif %}

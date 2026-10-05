@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block body %}
+<main class="login">
+  <form method="post" action="/login" class="card">
+    <h1>NetOps Guard</h1>
+    <p class="muted">DefenseClaw × OpenClaw lab dashboard. Local access only.</p>
+    <label for="token">Dashboard token <span class="muted">(DCLAB_DASH_TOKEN from .env)</span></label>
+    <input id="token" name="token" type="password" autocomplete="off" required autofocus>
+    {% if error %}<p class="bad">Invalid token.</p>{% endif %}
+    <button type="submit">Sign in</button>
+  </form>
+</main>
+{% endblock %}

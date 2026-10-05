@@ -1,0 +1,13 @@
+{% if rows %}
+<ol class="lanes">
+{% for r in rows %}
+<li class="lane-{{ r.event }}">
+  {% if r.event == 'handoff' %}<b>{{ r.from }}</b> <span class="arrow">⟶</span> <b>{{ r.to }}</b> <span class="tag v-allow">signed</span>
+    <div class="small muted">{{ r.task }}</div>
+  {% elif r.event == 'accepted' %}<b>{{ r.to }}</b> verified task from <b>{{ r.from }}</b> <span class="tag v-allow">accepted</span>
+  {% else %}<b>{{ r.to }}</b> rejected handoff claiming <b>{{ r.claimed_from }}</b> <span class="tag v-block">rejected</span>
+    <div class="small muted">{{ r.reason }}</div>{% endif %}
+</li>
+{% endfor %}
+</ol>
+{% else %}<p class="muted">No handoffs yet. Ask the orchestrator for a review to see delegation.</p>{% endif %}

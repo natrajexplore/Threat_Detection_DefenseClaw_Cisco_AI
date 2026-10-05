@@ -1,0 +1,10 @@
+<div class="table-wrap"><table>
+<thead><tr><th>ID</th><th>Category</th><th>Title</th><th>Observe</th><th>Action</th></tr></thead>
+<tbody>
+{% for c in cases %}{% set r = results.get(c.id, {}) %}
+<tr><td class="mono">{{ c.id }}</td><td>{{ c.category }}</td><td>{{ c.title }}</td>
+{% for m in ['observe', 'action'] %}{% set x = r.get(m) %}
+<td>{% if x %}<span class="tag r-{{ x.result|lower }}">{{ x.result }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+{% endfor %}</tr>
+{% endfor %}
+</tbody></table></div>

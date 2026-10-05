@@ -1,0 +1,25 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# --- Lab security: never commit secrets, audit DBs, raw evidence ---
+.env
+.env.*
+!.env.example
+*.db
+*.sqlite
+evidence/**/raw/
+evidence/**/*.db
+.dclab/
+node_modules/
+
+# Duplicate of the root docs (kept on disk, not tracked)
+defenseclaw-openclaw-lab/
+defenseclaw-openclaw-lab.zip

@@ -1,0 +1,9 @@
+{% if rows %}
+<ul class="feed">
+{% for r in rows %}
+<li><span class="tag v-{{ r.verdict }}">{{ r.verdict }}</span>
+<span class="mono">{{ r.agent }} → {{ r.tool }}</span>
+{% if r.reason %}<div class="muted small">{{ r.reason }}</div>{% endif %}</li>
+{% endfor %}
+</ul>
+{% else %}<p class="muted">No NetOps MCP tool calls yet.</p>{% endif %}
