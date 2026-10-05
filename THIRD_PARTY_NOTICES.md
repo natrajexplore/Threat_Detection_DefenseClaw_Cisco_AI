@@ -25,12 +25,6 @@ AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ```
 
-### Atkinson Hyperlegible Next and Atkinson Hyperlegible Mono
-- Files: `src/openclaw_defenseclaw/dashboard/static/fonts/atkinson-next.woff2`, `atkinson-mono.woff2` (Latin subset, unmodified, self-hosted so the dashboard's CSP can block all external loads)
-- Source: https://github.com/googlefonts/atkinson-hyperlegible-next and https://github.com/googlefonts/atkinson-hyperlegible-next-mono (Braille Institute of America)
-- License: SIL Open Font License 1.1. Full text in [`fonts/OFL.txt`](src/openclaw_defenseclaw/dashboard/static/fonts/OFL.txt) (Next) and [`fonts/OFL-mono.txt`](src/openclaw_defenseclaw/dashboard/static/fonts/OFL-mono.txt) (Mono)
-- Copyright 2020-2024 The Atkinson Hyperlegible Next Project Authors; Copyright 2020-2024 The Atkinson Hyperlegible Mono Project Authors
-
 ## Installed separately (not distributed here)
 
 These are installed by `uv sync` or the setup scripts from their own sources, under their own licenses. This repository does not redistribute them:

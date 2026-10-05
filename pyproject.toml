@@ -4,7 +4,7 @@ version = "0.2.0"
 description = "DefenseClaw x OpenClaw NetOps Assistant security lab: governed multi-agent + MCP tooling, evidence capture, dashboard"
 readme = "README.md"
 license = "MIT"
-license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md", "src/openclaw_defenseclaw/dashboard/static/fonts/OFL*.txt"]
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
 authors = [
     { email = "natrajexplore@gmail.com" }
 ]

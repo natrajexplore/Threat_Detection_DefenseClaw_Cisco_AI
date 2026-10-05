@@ -1,8 +1,9 @@
-<header class="top">
+<aside class="side" aria-label="NetOps Guard">
   <div class="brand"><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span> NetOps Guard</div>
+  <p class="side-sub">DefenseClaw security console</p>
   <nav class="nav" aria-label="Main">
     <a href="/" {% if page == "overview" %}aria-current="page"{% endif %}>Overview</a>
     <a href="/trace" {% if page == "trace" %}aria-current="page"{% endif %}>Conversation trace</a>
-    <form method="post" action="/logout"><button class="ghost" type="submit">Sign out</button></form>
   </nav>
-</header>
+  <form method="post" action="/logout" class="side-foot"><button class="ghost" type="submit">Sign out</button></form>
+</aside>

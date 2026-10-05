@@ -113,8 +113,7 @@ def test_dashboard_trace_and_export():
     html = files[0].read_text(encoding="utf-8")
     assert "http://" not in html.split("<body>")[0].replace("http-equiv", "")  # no external loads in <head>
     assert "src=" not in html and "FAKE_KEY_DO_NOT_USE" not in html and "&lt;script&gt;" in html
-    assert "data:font/woff2;base64," in html and "/static/fonts/" not in html  # fonts travel with the report
-    assert "font-src data:" in html
+    assert "/static/" not in html  # nothing the report needs lives on the server
     assert 'class="wire c1 ln-operator"' in html  # agents drawn as cables
     d = c.get(f"/trace/run/{run['id']}/download")
     assert d.status_code == 200 and "attachment" in d.headers["content-disposition"]

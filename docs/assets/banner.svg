@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-labelledby="t d">
+  <title id="t">NetOps Guard</title>
+  <desc id="d">Governing AI agents that act, with Cisco DefenseClaw and OpenClaw.</desc>
+  <rect width="1200" height="300" rx="16" fill="#0e1015"/>
+  <!-- three agent cables run across the banner; the middle one is cut and capped in red: a blocked action -->
+  <path d="M0 236 H1200" stroke="#5B9BE6" stroke-width="4" opacity=".55"/>
+  <path d="M0 252 H760" stroke="#A58AD8" stroke-width="4" opacity=".55"/>
+  <rect x="764" y="244" width="16" height="16" rx="3" fill="#f87171"/>
+  <path d="M0 268 H1200" stroke="#5DBB86" stroke-width="4" opacity=".55"/>
+  <g transform="translate(72 74)">
+    <rect width="76" height="76" rx="14" fill="#ff5c5c"/>
+    <rect x="20" y="18" width="8" height="40" rx="4" fill="#fff"/>
+    <rect x="34" y="18" width="8" height="40" rx="4" fill="#fff"/>
+    <rect x="48" y="18" width="8" height="40" rx="4" fill="#fff"/>
+  </g>
+  <text x="176" y="122" fill="#f4f4f5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="52" font-weight="700">NetOps Guard</text>
+  <text x="178" y="164" fill="#bcbcc0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="24">Governing AI agents that act, with Cisco DefenseClaw and OpenClaw</text>
+</svg>

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import base64
 import datetime as dt
 import hmac
 import ipaddress
@@ -24,7 +23,7 @@ from ..security import a2a_ledger, events_ledger
 
 HERE = Path(__file__).parent
 COOKIE = "dclab_session"
-CSP = ("default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; "
+CSP = ("default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
        "connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'")
 
 
@@ -42,22 +41,14 @@ def _add_filters(env: Environment) -> Environment:
     return env
 
 
-def _inline_fonts(css: str) -> str:
-    """Swap /static/fonts/*.woff2 URLs for data: URIs so the offline report keeps its typography."""
-    def repl(m: re.Match) -> str:
-        data = (HERE / "static" / "fonts" / m.group(1)).read_bytes()
-        return f'url("data:font/woff2;base64,{base64.b64encode(data).decode()}")'
-    return re.sub(r'url\("/static/fonts/([A-Za-z0-9._-]+\.woff2)"\)', repl, css)
-
-
 def render_trace_report(run: dict, tc: str = "") -> str:
-    """Self-contained offline HTML report (inline CSS/JS/fonts, no network, redacted content)."""
+    """Self-contained offline HTML report (inline CSS/JS, system fonts, no network, redacted content)."""
     env = _add_filters(Environment(loader=FileSystemLoader(HERE / "templates"),
                                    autoescape=select_autoescape(["html"])))
     return env.get_template("trace_export.html").render(
         run=run, tc=tc, exportable=False, live=False, cases=[],
         generated=_fmt_ts(time.time()),
-        css=_inline_fonts((HERE / "static" / "app.css").read_text(encoding="utf-8")),
+        css=(HERE / "static" / "app.css").read_text(encoding="utf-8"),
         js=(HERE / "static" / "trace.js").read_text(encoding="utf-8").replace("</", "<\\/"))
 
 

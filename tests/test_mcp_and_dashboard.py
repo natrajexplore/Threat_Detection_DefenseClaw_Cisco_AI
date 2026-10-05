@@ -91,11 +91,10 @@ def test_dashboard_security():
     assert c.get("/login").headers["referrer-policy"] == "same-origin"
     assert c.post("/logout", headers={"origin": "null"}, follow_redirects=False).status_code == 403
     assert c.get("/p/matrix").status_code == 200
-    # Self-hosted fonts must be allowed by CSP and actually served; nothing loads from a CDN.
-    assert "font-src 'self'" in r.headers["content-security-policy"]
-    font = c.get("/static/fonts/atkinson-next.woff2")
-    assert font.status_code == 200 and font.content[:4] == b"wOF2"
+    # System fonts only: the stylesheet loads nothing, from anywhere.
+    assert "font-src" not in r.headers["content-security-policy"]
     css = c.get("/static/app.css").text
+    assert "@font-face" not in css and "url(" not in css
     assert "https://" not in css and "uppercase" not in css
     assert c.get("/p/case/TC-A2A-01").status_code == 200
     outside = TestClient(create_app(port=8765), base_url="http://127.0.0.1:8765", client=("10.0.0.5", 5000))
